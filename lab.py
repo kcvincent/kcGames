@@ -1,5 +1,12 @@
-from kivy.config import Config
+import qrcode
 
-Config.read("kcGames.ini")
-Config.write()
-Config.getint('kivy', 'show_fps')
+qr = qrcode.QRCode(
+    version=1,
+    error_correction=qrcode.constants.ERROR_CORRECT_L,
+    box_size=10,
+    border=4,
+)
+qr.add_data('Abcd.1234')
+qr.make(fit=True)
+img = qr.make_image()
+img.save("qrcode_demo.png")

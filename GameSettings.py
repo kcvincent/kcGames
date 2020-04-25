@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 from kcGameLib import *
+import json
+from datetime import datetime
 
 
-class Game2048Settings:
-    DEFAULT_LAYERS = 5
+class GameSettings:
+    DEFAULT_LAYERS = 2
     LAYER_SPACE = 30
     DEFAULT_LINE_BLOCKS = 3
     DEFAULT_BLOCK_WIDTH = 100
-    HEADER_HEIGHT = 100
+    HEADER_HEIGHT = 300
     BLOCK_PAD = 10
     SAVE_FILENAME = "SaveData.txt"
     BOARD_BG_COLOR = (187, 173, 160)
@@ -81,13 +83,38 @@ class Game2048Settings:
         #    self.screenWidth = frame_size.width
         #    self.screenHeight = frame_size.height
 
-        self._layers = Game2048Settings.DEFAULT_LAYERS
-        self._layer_space = Game2048Settings.LAYER_SPACE
-        self._line_blocks = Game2048Settings.DEFAULT_LINE_BLOCKS
-        self._block_width = Game2048Settings.DEFAULT_BLOCK_WIDTH
-        self._header_height = Game2048Settings.HEADER_HEIGHT
-        self._block_pad = Game2048Settings.BLOCK_PAD
-        self._save_filename = Game2048Settings.SAVE_FILENAME = "SaveData.txt"
+        self._layers = GameSettings.DEFAULT_LAYERS
+        self._layer_space = GameSettings.LAYER_SPACE
+        self._line_blocks = GameSettings.DEFAULT_LINE_BLOCKS
+        self._block_width = GameSettings.DEFAULT_BLOCK_WIDTH
+        self._block_height = GameSettings.DEFAULT_BLOCK_WIDTH
+        self._header_height = GameSettings.HEADER_HEIGHT
+        self._block_pad = GameSettings.BLOCK_PAD
+        self._save_filename = GameSettings.SAVE_FILENAME = "SaveData.txt"
+        self._tile_matrix = []
+        self._total_points = 0
+
+    def LoadFromFile(self):
+        with open(self._save_filename, "r") as f:
+            jsondata = f.readline()
+        gsd = json.loads(jsondata)
+        self._layers = gsd['_layers']
+        self._layer_space = gsd['_layer_space']
+
+        self._line_blocks = gsd['_line_blocks']
+        self._block_width = gsd['_block_width']
+        self._block_height = gsd['_block_height']
+        self._block_pad = gsd['_block_pad']
+
+        self._total_points = gsd['_total_points']
+        self._tile_matrix = gsd['_tile_matrix']
+
+        self._header_height = GameSettings.HEADER_HEIGHT
+
+    def SaveToFile(self, tile_matrix):
+        self._tile_matrix = tile_matrix
+        with open(self._save_filename, 'w') as f:
+            f.write(json.dumps(self.__dict__))
 
     @property
     def Layers(self):
@@ -118,6 +145,13 @@ class Game2048Settings:
         self._block_width = max(value, 80)
 
     @property
+    def BlockHeight(self):
+        return self._block_height
+    @BlockHeight.setter
+    def BlockHeight(self, value):
+        self._block_height = max(value, 80)
+
+    @property
     def HeaderHeight(self):
         return self._header_height
     @HeaderHeight.setter
@@ -141,17 +175,25 @@ class Game2048Settings:
     @property
     def BlockBgColorDict(self):
         kivy_block_bg_color_dict = dict()
-        for key in Game2048Settings.BLOCK_BG_COLOR_DICT:
-            kivy_block_bg_color_dict.update({key: toKivyColor(Game2048Settings.BLOCK_BG_COLOR_DICT[key])})
+        for key in GameSettings.BLOCK_BG_COLOR_DICT:
+            kivy_block_bg_color_dict.update({key: toKivyColor(GameSettings.BLOCK_BG_COLOR_DICT[key])})
         return kivy_block_bg_color_dict
 
     @property
     def BlockTextColorDict(self):
         kivy_block_text_color_dict = dict()
-        for key in Game2048Settings.BLOCK_TEXT_COLOR_DICT:
-            kivy_block_text_color_dict.update({key: toKivyColor(Game2048Settings.BLOCK_TEXT_COLOR_DICT[key])})
+        for key in GameSettings.BLOCK_TEXT_COLOR_DICT:
+            kivy_block_text_color_dict.update({key: toKivyColor(GameSettings.BLOCK_TEXT_COLOR_DICT[key])})
         return kivy_block_text_color_dict
 
     @property
     def BoardBGColor(self):
-        return toKivyColor(Game2048Settings.BOARD_BG_COLOR)
+        return toKivyColor(GameSettings.BOARD_BG_COLOR)
+
+    @property
+    def TileMatrix(self):
+        return self._tile_matrix
+
+    @property
+    def TotalPoints(self):
+        return self._total_points
