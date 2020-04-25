@@ -11,10 +11,6 @@ def d3tod1(d1, d2, d3, b):
     return d1*b2 + d2*b + d3
 
 
-#def floor(n):
-#    return int(n - (n % 1))
-
-
 def toKivyColor(rgb):
     b = tuple(map(truediv, rgb, (255.0, 255.0, 255.0)))
     return b

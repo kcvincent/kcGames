@@ -87,6 +87,8 @@ class Game2048Board(Widget):
         Window.size = (self.frame_width, self.frame_height) \
             = (self.LayerWidth * self.layers + (self.layers - 1) * self.layer_space,
                self.LayerHeight + self.header_height)
+        Window.left = (self.screenWidth - self.frame_width) // 2
+        Window.top = (self.screenHeight - self.frame_height) // 2
         Logger.info(f"LayerSize : ({self.LayerWidth}, {self.LayerHeight})")
         Logger.info(f"frameSize : ({self.frame_width}, {self.frame_height})")
         Logger.info(f"headerSize : ({self.frame_width}, {self.header_height})")
@@ -112,17 +114,18 @@ class Game2048Board(Widget):
                     self.tileMatrix[ly1][i][j] += self.tileMatrix[ly2][i][j]
                     self.tileMatrix[ly2][i][j] = 0
                     self.addPoints(self.tileMatrix[ly1][i][j])
-        self.placeRandomTile()
 
     def DoMergeUpperLayer(self):
         if self.layers > 1:
             for ly in range(0, self.layers - 1):
                 self.DoMergeTwoLayer(ly, ly + 1)
+            self.placeRandomTile()
 
     def DoMergeLowerLayer(self):
         if self.layers > 1:
             for ly in range(self.layers - 1, 0, -1):
                 self.DoMergeTwoLayer(ly, ly - 1)
+            self.placeRandomTile()
 
     def rotateMatrixClockwise(self):
         for ly in range(0, self.layers):
@@ -262,25 +265,17 @@ class Game2048Board(Widget):
 
     def saveGameState(self):
         gsd = GameSaveData(self.layers, self.line_blocks, self.total_points, self.tileMatrix)
-        f = open(self.settings.SaveFileName, 'w')
-        f.write(json.dumps(gsd.__dict__))
-        f.close()
+        gsd.SaveToFile(self.settings.SaveFileName)
         self.msg = f'Saved at {datetime.now().strftime("%Y/%m/%d, %H:%M:%S")}'
         self.printMatrix()
 
     def loadGameState(self):
-        f = open(self.settings.SaveFileName, "r")
-        jsondata = f.readline()
-        f.close()
-        gsd = json.loads(jsondata)
-        self.layers = gsd['_layers']
-        self.line_blocks = gsd['_line_blocks']
-        self.total_points = gsd['_total_points']
-        self.tileMatrix = gsd['_tile_matrix']
-        #mat = (f.readline()).split(' ', self.TotalBlocks)
-        #for i in range(0, self.TotalBlocks):
-        #   (a, b, c) = d1tod3(i, self.line_blocks)
-        #  self.tileMatrix[a][b][c] = int(mat[i])
+        gsd = GameSaveData()
+        gsd.LoadFromFile(self.settings.SaveFileName)
+        self.layers = gsd.Layers
+        self.line_blocks = gsd.LineBlocks
+        self.total_points = gsd.TotalPoints
+        self.tileMatrix = gsd.TileMatrix
         self.resizeWindow()
         self.gameOvered = False
         self.msg = f'Loaded at {datetime.now().strftime("%Y/%m/%d, %H:%M:%S")}'
@@ -307,7 +302,7 @@ class Game2048Board(Widget):
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         #Keycode is composed of an integer + a string
         #If we hit escape, release the keyboard
-        Logger.info(f"press {keycode} {text} {modifiers}")
+        #Logger.info(f"press {keycode} {text} {modifiers}")
         if keycode[1] == 'escape':
             keyboard.release()
         if self.gameOvered:

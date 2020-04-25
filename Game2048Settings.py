@@ -1,10 +1,10 @@
 from kcGameLib import *
 
 class Game2048Settings:
-    DEFAULT_LAYERS = 1
+    DEFAULT_LAYERS = 5
     LAYER_SPACE = 30
-    DEFAULT_LINE_BLOCKS = 2
-    DEFAULT_BLOCK_WIDTH = 120
+    DEFAULT_LINE_BLOCKS = 3
+    DEFAULT_BLOCK_WIDTH = 100
     HEADER_HEIGHT = 100
     BLOCK_PAD = 10
     SAVE_FILENAME = "SaveData.txt"
