@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 from kcGameLib import *
+
 
 class Game2048Settings:
     DEFAULT_LAYERS = 5

@@ -1,20 +1,18 @@
-from kivy.logger import Logger
-from kivy.core.window import Window
-from kivy.uix.widget import Widget
-from kivy.app import App
-from kivy.graphics import Color,  Rectangle
-from kivy.core.text import Label as CoreLabel
+# -*- coding: utf-8 -*-
+from datetime import datetime
 from random import *
 import kivy.utils
-from datetime import datetime
+from kivy.app import App
+from kivy.core.text import Label as CoreLabel
+from kivy.core.window import Window
+from kivy.graphics import Color, Rectangle
+from kivy.logger import Logger
+from kivy.uix.widget import Widget
 from win32api import GetSystemMetrics
-from kivy.config import Config
-import json
-from math import floor
 
 from Game2048Settings import Game2048Settings
-from kcGameLib import *
 from GameSaveData import GameSaveData
+from kcGameLib import *
 
 kivy.require("1.11.1")
 
@@ -81,7 +79,7 @@ class Game2048Board(Widget):
         Window.bind(on_resize=self.on_window_resize)
 
     def initMatrix(self):
-        return [[[0 for i in range(self.line_blocks)] for i in range(self.line_blocks)] for i in range(self.layers)]
+        return [[[0 for _ in range(self.line_blocks)] for _ in range(self.line_blocks)] for _ in range(self.layers)]
 
     def resizeWindow(self):
         Window.size = (self.frame_width, self.frame_height) \
@@ -110,7 +108,9 @@ class Game2048Board(Widget):
         for i in range(0, self.line_blocks):
             for j in range(0, self.line_blocks):
                 if self.tileMatrix[ly1][i][j] == self.tileMatrix[ly2][i][j]:
-                    Logger.debug(f" Merge ({ly1},{i},{j}) {self.tileMatrix[ly1][i][j]} , ({ly2},{i},{j}) {self.tileMatrix[ly2][i][j]}=>  ({ly1},{i},{j}) {self.tileMatrix[ly1][i][j] + self.tileMatrix[ly2][i][j]}")
+                    Logger.debug(f" Merge ({ly1},{i},{j}) {self.tileMatrix[ly1][i][j]} , ")
+                    Logger.debug(f"       ({ly2},{i},{j}) {self.tileMatrix[ly2][i][j]} ")
+                    Logger.debug(f" Into  ({ly1},{i},{j}) {self.tileMatrix[ly1][i][j] + self.tileMatrix[ly2][i][j]}")
                     self.tileMatrix[ly1][i][j] += self.tileMatrix[ly2][i][j]
                     self.tileMatrix[ly2][i][j] = 0
                     self.addPoints(self.tileMatrix[ly1][i][j])
@@ -151,7 +151,8 @@ class Game2048Board(Widget):
                 for j in range(1, self.line_blocks):
                     if self.tileMatrix[ly][i][j - 1] == 0 and self.tileMatrix[ly][i][j] > 0:
                         return True
-                    elif (self.tileMatrix[ly][i][j - 1] == self.tileMatrix[ly][i][j]) and self.tileMatrix[ly][i][j - 1] != 0:
+                    elif (self.tileMatrix[ly][i][j - 1] == self.tileMatrix[ly][i][j]) and \
+                            self.tileMatrix[ly][i][j - 1] != 0:
                         return True
         return False
 
@@ -164,12 +165,14 @@ class Game2048Board(Widget):
             for i in range(0, self.line_blocks):
                 for j in range(0, self.line_blocks):
                     if self.tileMatrix[ly][i][j] == 0 and self.tileMatrix[ly + 1][i][j] > 0:
-                        #當前 層 為零, ly+1層不為零
+                        # 當前 層 為零, ly+1層不為零
                         return True
-                    elif self.tileMatrix[ly][i][j] != 0 and (self.tileMatrix[ly][i][j] == self.tileMatrix[ly + 1][i][j]):
+                    elif self.tileMatrix[ly][i][j] != 0 and (
+                            self.tileMatrix[ly][i][j] == self.tileMatrix[ly + 1][i][j]):
                         # 當前 層 不為零, 當前 層 = ly+1層
                         return True
-                    elif self.tileMatrix[self.layers - 1 - ly][i][j] == 0 and self.tileMatrix[self.layers - 1 - ly - 1][i][j] > 0:
+                    elif self.tileMatrix[self.layers - 1 - ly][i][j] == 0 and \
+                            self.tileMatrix[self.layers - 1 - ly - 1][i][j] > 0:
                         # 倒序 當前 層 為零, ly - 1層不為零
                         return True
 
@@ -209,10 +212,10 @@ class Game2048Board(Widget):
             self.saveGameState()
             raise GameOverError("Game Over ??")
 
-        (a, b, c) = zeros[randint(0, len(zeros)-1)]
+        (a, b, c) = zeros[randint(0, len(zeros) - 1)]
 
         new_val_array = [2, 2, 4]
-        new_val = new_val_array[randint(0, len(new_val_array)-1)]
+        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
         self.tileMatrix[a][b][c] = new_val
         self.new_block = (a, b, c)
 
@@ -232,10 +235,10 @@ class Game2048Board(Widget):
                         return True
         Logger.info(" checkIfCanGo Check Layers blocks Between Layers ")
         if self.layers > 1:
-            for ly in range(0, self.layers-1):
+            for ly in range(0, self.layers - 1):
                 for i in range(0, self.line_blocks):
                     for j in range(0, self.line_blocks):
-                        if self.tileMatrix[ly][i][j] == self.tileMatrix[ly+1][i][j]:
+                        if self.tileMatrix[ly][i][j] == self.tileMatrix[ly + 1][i][j]:
                             return True
         Logger.info(" checkIfCanGo False")
         return False
@@ -291,6 +294,7 @@ class Game2048Board(Widget):
             self.printMatrix()
 
     def on_window_resize(self, window, width, height):
+        Logger.trace(f"on_window_resize : {window} , {width} ,{height}")
         (self.frame_width, self.frame_height) = (width, height)
         self.printMatrix()
 
@@ -300,9 +304,9 @@ class Game2048Board(Widget):
         self._keyboard = None
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        #Keycode is composed of an integer + a string
-        #If we hit escape, release the keyboard
-        #Logger.info(f"press {keycode} {text} {modifiers}")
+        # Keycode is composed of an integer + a string
+        # If we hit escape, release the keyboard
+        Logger.info(f"press {keycode}")
         if keycode[1] == 'escape':
             keyboard.release()
         if self.gameOvered:
@@ -337,7 +341,6 @@ class Game2048Board(Widget):
                     self.undo()
                 Logger.info(f"Done keycode {keycode}")
 
-
         # Return True to accept the key. Otherwise, it will be used by
         # the system.
         return True
@@ -358,14 +361,14 @@ class Game2048Board(Widget):
 
     def getBlockColor(self, ly, i, j):
         return self.block_bg_color_dict[self.tileMatrix[ly][i][j]]
-    
+
     def getBlockTextColor(self, ly, i, j):
         return self.block_text_color_dict[self.tileMatrix[ly][i][j]]
 
-    def getBlockX(self, ly, i, j ):
+    def getBlockX(self, ly, i):
         return ly * (self.LayerWidth + self.layer_space) + i * (self.block_width + self.block_pad) + self.block_pad
 
-    def getBlockY(self, ly, i, j):
+    def getBlockY(self, j):
         return self.header_height + j * (self.block_width + self.block_pad)
 
     def drawBackGround(self):
@@ -390,7 +393,6 @@ class Game2048Board(Widget):
                                       pos=self.toKivyXY(self.block_pad, text.size[1] * 2, text.size[1]),
                                       texture=text))
 
-
     def printMatrix(self):
         self.canvas.clear()
 
@@ -404,7 +406,8 @@ class Game2048Board(Widget):
                 for j in range(0, self.line_blocks):
                     # Draw Block outline
                     self.canvas.add(Color(rgb=self.getBlockColor(ly, i, j)))
-                    block_pos = self.toKivyXY(self.getBlockX(ly, i, j), self.getBlockY(ly, i, j), self.block_width + self.block_pad)
+                    block_pos = self.toKivyXY(self.getBlockX(ly, i), self.getBlockY(j),
+                                              self.block_width + self.block_pad)
                     self.canvas.add(Rectangle(pos=block_pos, size=(self.block_width, self.block_height)))
                     # Draw Block Text
                     if self.tileMatrix[ly][i][j] != 0:
@@ -415,21 +418,13 @@ class Game2048Board(Widget):
                         label = CoreLabel(text=f"{self.tileMatrix[ly][i][j]}", font_size=48)
                         label.refresh()
                         text = label.texture
-                        text_pos = self.toKivyXY(self.getBlockX(ly, i, j) + self.block_width // 2 - text.size[0] // 2,
-                                                 self.getBlockY(ly, i, j) + self.block_width // 2 - text.size[1] // 2,
+                        text_pos = self.toKivyXY(self.getBlockX(ly, i) + self.block_width // 2 - text.size[0] // 2,
+                                                 self.getBlockY(j) + self.block_width // 2 - text.size[1] // 2,
                                                  text.size[1] + self.block_pad)
 
-                        #text_pos = self.toKivyXY(ly * (self.layerWidth + self.layerSpace) +
-                        #                         i * (self.block_width + self.block_pad) + self.block_pad + self.block_width // 2
-                        #                         - text.size[0] // 2,
-                        #                         self.header_height + j * (self.block_width + self.block_pad)
-                        #                         + self.block_width // 2 - text.size[1] // 2,
-                        #                         text.size[1] + self.block_pad)
                         self.canvas.add(Rectangle(pos=text_pos,
                                                   size=text.size,
                                                   texture=text))
-
-
 
 
 class KcGames(App):
