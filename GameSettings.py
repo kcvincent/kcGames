@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 from kcGameLib import *
 import json
-from datetime import datetime
 
 
 class GameSettings:
-    DEFAULT_GAME_STYLE = 2
+    GAME_SQUARE_2 = 0
+    GAME_CUBE_3 = 1
+    GAME_FIBONCCI = 2
+
+    DEFAULT_GAME_STYLE = GAME_SQUARE_2
     DEFAULT_LAYERS = 1
     DEFAULT_LINE_BLOCKS = 4
 
@@ -15,78 +18,29 @@ class GameSettings:
     BLOCK_PAD = 10
     SAVE_FILENAME = "SaveData.txt"
     BOARD_BG_COLOR = (187, 173, 160)
-    #BLOCK_BG_COLOR_DICT = {
-    #    0: (205, 193, 180),
-    #    2: (238, 228, 218),
-    #    4: (237, 224, 200),
-    #    8: (242, 177, 121),
-    #    16: (245, 149, 99),
-    #    32: (246, 124, 95),
-    #    64: (246, 94, 59),
-    #    128: (237, 207, 114),
-    #    256: (237, 205, 98),
-    #    512: (237, 200, 80),
-    #    1024: (237, 197, 64),
-    #    2048: (237, 194, 46),
-    #    4096: (235, 185, 20),
-    #    8192: (211, 166, 18),
-    #    16384: (188, 148, 16),
-    #    32768: (188, 148, 16),
-    #    65536: (188, 148, 16),
-    #    131072: (188, 148, 16),
-    #    262144: (188, 148, 16),
-    #    524288: (188, 148, 16),
-    #    1048576: (188, 148, 16),
-    #    2097152: (188, 148, 16)
-    #}
-    #
-    #BLOCK_TEXT_COLOR_DICT = {
-    #    0: (205, 193, 180),
-    #    2: (119, 110, 101),
-    #    4: (119, 110, 101),
-    #    8: (249, 246, 242),
-    #    16: (249, 246, 242),
-    #    32: (249, 246, 242),
-    #    64: (249, 246, 242),
-    #    128: (249, 246, 242),
-    #    256: (249, 246, 242),
-    #    512: (249, 246, 242),
-    #    1024: (249, 246, 242),
-    #    2048: (249, 246, 242),
-    #    4096: (249, 246, 242),
-    #    8192: (249, 246, 242),
-    #    16384: (249, 246, 242),
-    #    32768: (249, 246, 242),
-    #    65536: (249, 246, 242),
-    #    131072: (249, 246, 242),
-    #    262144: (249, 246, 242),
-    #    524288: (249, 246, 242),
-    #    1048576: (249, 246, 242),
-    #    2097152: (249, 246, 242)
-    #}
     BASE_BLOCK_BG_COLOR_DICT = [
         (205, 193, 180),
         (238, 228, 218),
-         (237, 224, 200),
-         (242, 177, 121),
-         (245, 149, 99),
-         (246, 124, 95),
-         (246, 94, 59),
-         (237, 207, 114),
-         (237, 205, 98),
-         (237, 200, 80),
-         (237, 197, 64),
-         (237, 194, 46),
-         (235, 185, 20),
-         (211, 166, 18),
-         (188, 148, 16),
-         (188, 148, 16),
-         (188, 148, 16),
-         (188, 148, 16),
-         (188, 148, 16),
-         (188, 148, 16),
-         (188, 148, 16),
-         (188, 148, 16)
+        (237, 224, 200),
+        (242, 177, 121),
+        (245, 149, 99),
+        (246, 124, 95),
+        (246, 94, 59),
+        (237, 207, 114),
+        (237, 205, 98),
+        (237, 200, 80),
+        (237, 197, 64),
+        (237, 194, 46),
+        (235, 185, 20),
+        (211, 166, 18),
+        (188, 148, 16),
+        (188, 148, 16),
+        (188, 148, 16),
+        (188, 148, 16),
+        (188, 148, 16),
+        (188, 148, 16),
+        (188, 148, 16),
+        (188, 148, 16)
     ]
     BLOCK_BG_COLOR_DICT = dict()
 
@@ -116,7 +70,7 @@ class GameSettings:
     ]
     BLOCK_TEXT_COLOR_DICT = dict()
 
-    def __init__(self):
+    def __init__(self, game_style, layers, line_blocks):
         #(self.screenWidth, self.screenHeight) = (800, 600)
         #if sys.platform == 'linux2':
         #    import subprocess
@@ -135,50 +89,65 @@ class GameSettings:
         #    frame_size = NSScreen.mainScreen().frame().size
         #    self.screenWidth = frame_size.width
         #    self.screenHeight = frame_size.height
-        self._game_style = GameSettings.DEFAULT_GAME_STYLE
+
+        key_list_len = len(GameSettings.BASE_BLOCK_BG_COLOR_DICT)
         self._key_list = []
+        if game_style in (GameSettings.GAME_SQUARE_2, GameSettings.GAME_FIBONCCI):
+            self._game_style = game_style
+            self._line_blocks = max(line_blocks, 2)
+            if self._game_style == GameSettings.GAME_SQUARE_2:
+                self._key_list.extend(self.Square2List(key_list_len))
+            elif self._game_style == GameSettings.GAME_FIBONCCI:
+                self._key_list.extend(self.FibonacciList(key_list_len))
+            else:
+                raise Exception("Logical Error")
+        elif game_style == GameSettings.GAME_CUBE_3:
+            self._game_style = game_style
+            self._line_blocks = max(line_blocks, 3)
+            self._key_list.extend(self.Cube3List(key_list_len))
+        else:
+            self._game_style = GameSettings.DEFAULT_GAME_STYLE
+            self._line_blocks = GameSettings.DEFAULT_LINE_BLOCKS
+            self._key_list.extend(self.Square2List(key_list_len))
+
+        if layers in range(1, 5):
+            self._layers = layers
+        else:
+            self._layers = GameSettings.DEFAULT_LAYER
+
         self.initColorDict()
 
-        self._layers = GameSettings.DEFAULT_LAYERS
         self._layer_space = GameSettings.LAYER_SPACE
-        self._line_blocks = GameSettings.DEFAULT_LINE_BLOCKS
         self._block_width = GameSettings.DEFAULT_BLOCK_WIDTH
         self._block_height = GameSettings.DEFAULT_BLOCK_WIDTH
         self._header_height = GameSettings.HEADER_HEIGHT
         self._block_pad = GameSettings.BLOCK_PAD
-        self._save_filename = GameSettings.SAVE_FILENAME = "SaveData.txt"
+        self._save_filename = GameSettings.SAVE_FILENAME
         self._tile_matrix = []
         self._total_points = 0
 
-    def initColorDict(self):
-        keylistlen = len(GameSettings.BASE_BLOCK_BG_COLOR_DICT)
-        if self._game_style == 0:
-            self._key_list.extend(self.Power2List(keylistlen))
-        elif self._game_style == 1:
-            self._key_list.extend(self.Power3List(keylistlen))
-        elif self._game_style == 2:
-            self._key_list.extend(self.FibonacciList(keylistlen))
-        else:
-            self._key_list.extend(self.Power2List(keylistlen))
-        for i in range(keylistlen):
-            k = self._key_list[i]
-            print (f" {k} : {GameSettings.BASE_BLOCK_BG_COLOR_DICT[i]} , {GameSettings.BASE_BLOCK_TEXT_COLOR_DICT[i]} ")
-            GameSettings.BLOCK_BG_COLOR_DICT.update({ k : GameSettings.BASE_BLOCK_BG_COLOR_DICT[i]})
-            GameSettings.BLOCK_TEXT_COLOR_DICT.update({ k : GameSettings.BASE_BLOCK_TEXT_COLOR_DICT[i]})
 
-    def Power2List(self, length =21):
+
+    def initColorDict(self):
+        key_list_len = len(GameSettings.BASE_BLOCK_BG_COLOR_DICT)
+        for i in range(key_list_len):
+            k = self._key_list[i]
+            GameSettings.BLOCK_BG_COLOR_DICT.update({k: GameSettings.BASE_BLOCK_BG_COLOR_DICT[i]})
+            GameSettings.BLOCK_TEXT_COLOR_DICT.update({k: GameSettings.BASE_BLOCK_TEXT_COLOR_DICT[i]})
+
+    def Square2List(self, length=21):
         lst = [0, 2]
         for i in range(1, length-1):
             lst.append(lst[i] * 2)
         return lst
 
-    def Power3List(self, length=21):
+    def Cube3List(self, length=21):
         lst = [0, 3]
         for i in range(1, length-1):
             lst.append(lst[i] * 3)
         return lst
 
-    def FibonacciList(self, length=21 ):
+    def FibonacciList(self, length=21):
         lst = [0, 2, 3]
         for i in range(2, length-1):
             lst.append(lst[i - 1] + lst[i])
@@ -186,9 +155,11 @@ class GameSettings:
 
     def LoadFromFile(self):
         with open(self._save_filename, "r") as f:
-            jsondata = f.readline()
-        gsd = json.loads(jsondata)
+            json_data = f.readline()
+        gsd = json.loads(json_data)
         self._game_style = gsd['_game_style']
+        self._key_list = gsd['_key_list']
+
         self._layers = gsd['_layers']
         self._layer_space = gsd['_layer_space']
 
@@ -200,7 +171,8 @@ class GameSettings:
         self._total_points = gsd['_total_points']
         self._tile_matrix = gsd['_tile_matrix']
 
-        self._header_height = GameSettings.HEADER_HEIGHT
+        self._header_height = gsd['_header_height']
+        self.initColorDict()
 
     def SaveToFile(self, tile_matrix):
         self._tile_matrix = tile_matrix
@@ -237,7 +209,10 @@ class GameSettings:
 
     @LineBlocks.setter
     def LineBlocks(self, value):
-        self._line_blocks = max(value, 2)
+        if self._game_style == GameSettings.GAME_CUBE_3:
+            self._line_blocks = max(value, 3)
+        else:
+            self._line_blocks = max(value, 2)
 
     @property
     def BlockWidth(self):
@@ -281,17 +256,17 @@ class GameSettings:
 
     @property
     def BlockBgColorDict(self):
-        kivy_block_bg_color_dict = dict()
+        new_dict = dict()
         for key in GameSettings.BLOCK_BG_COLOR_DICT:
-            kivy_block_bg_color_dict.update({key: toKivyColor(GameSettings.BLOCK_BG_COLOR_DICT[key])})
-        return kivy_block_bg_color_dict
+            new_dict.update({key: toKivyColor(GameSettings.BLOCK_BG_COLOR_DICT[key])})
+        return new_dict
 
     @property
     def BlockTextColorDict(self):
-        kivy_block_text_color_dict = dict()
+        new_dict = dict()
         for key in GameSettings.BLOCK_TEXT_COLOR_DICT:
-            kivy_block_text_color_dict.update({key: toKivyColor(GameSettings.BLOCK_TEXT_COLOR_DICT[key])})
-        return kivy_block_text_color_dict
+            new_dict.update({key: toKivyColor(GameSettings.BLOCK_TEXT_COLOR_DICT[key])})
+        return new_dict
 
     @property
     def BoardBGColor(self):

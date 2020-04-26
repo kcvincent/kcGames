@@ -4,7 +4,6 @@ from random import *
 import kivy.utils
 from kivy.app import App
 from kivy.core.text import Label as CoreLabel
-from kivy.core.image import Image as CoreImage
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from kivy.logger import Logger
@@ -12,7 +11,7 @@ from kivy.uix.widget import Widget
 from win32api import GetSystemMetrics
 from GameSettings import GameSettings
 from kcGameLib import *
-
+# from kivy.core.image import Image as CoreImage
 
 kivy.require("1.11.1")
 
@@ -21,7 +20,7 @@ class GameOverError(Exception):
     pass
 
 
-class Game2048Board(Widget):
+class kcBoardGame(Widget):
     @property
     def TotalBlocks(self):
         return self.settings.Layers * self.settings.LineBlocks * self.settings.LineBlocks
@@ -75,7 +74,7 @@ class Game2048Board(Widget):
         return self.settings.BlockPad
 
     def __init__(self, settings, **kwargs):
-        super(Game2048Board, self).__init__(**kwargs)
+        super(kcBoardGame, self).__init__(**kwargs)
 
         self.screenWidth = GetSystemMetrics(0)
         self.screenHeight = GetSystemMetrics(1)
@@ -189,11 +188,11 @@ class Game2048Board(Widget):
                                 self.tileMatrix[ly][i][j] == 0:
                             return True
                         elif (self.tileMatrix[ly][i][j - 2] != 0) and \
-                                (self.tileMatrix[ly][i][j - 2] == self.tileMatrix[ly][i][j -1 ]) and \
-                                (self.tileMatrix[ly][i][j - 1] == self.tileMatrix[ly][i][j]) :
+                                (self.tileMatrix[ly][i][j - 2] == self.tileMatrix[ly][i][j -1]) and \
+                                (self.tileMatrix[ly][i][j - 1] == self.tileMatrix[ly][i][j]):
                             return True
         elif self.settings.GameStyle == 2:
-            keylist = self.settings.KeyList
+            key_list = self.settings.KeyList
             for ly in range(0, self.Layers):
                 for i in range(0, self.LineBlocks):
                     for j in range(1, self.LineBlocks):
@@ -201,9 +200,11 @@ class Game2048Board(Widget):
                                 self.tileMatrix[ly][i][j] > 0:
                             return True
                         elif (self.tileMatrix[ly][i][j - 1] != 0) and \
-                            self.FibonacciMatchable(keylist, self.tileMatrix[ly][i][j - 1], self.tileMatrix[ly][i][j]):
+                                self.FibonacciMatchable(key_list,
+                                                        self.tileMatrix[ly][i][j - 1],
+                                                        self.tileMatrix[ly][i][j]):
                             return True
-        else: # if self.settings.GameStyle == 0 or other
+        else:  # if self.settings.GameStyle == 0 or other
             for ly in range(0, self.Layers):
                 for i in range(0, self.LineBlocks):
                     for j in range(1, self.LineBlocks):
@@ -243,10 +244,11 @@ class Game2048Board(Widget):
                             self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k + 1]
                         self.tileMatrix[ly][i][self.LineBlocks - 1] = 0
 
-
     def TwoEquMatchable(self, a, b):
         return a == b
 
+    def ThreeEquMatchable(self, a, b, c):
+        return a == b and b == c
 
     def FibonacciMatchable(self, key_list, a, b):
         if (a in key_list) and (b in key_list):
@@ -263,9 +265,6 @@ class Game2048Board(Widget):
                         if self.TwoEquMatchable(self.tileMatrix[ly][i][k], self.tileMatrix[ly][i][k + 1]):
                             self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k] * 2
                             self.tileMatrix[ly][i][k + 1] = 0
-                            # this was not intailized so the k value was going out the range value
-                            # so by this we ever we merge the files it assigns the present value to zero and
-                            # merge the number with the ahead value
                             self.addPoints(self.tileMatrix[ly][i][k])
                             self.moveTiles()
 
@@ -284,9 +283,6 @@ class Game2048Board(Widget):
                             self.addPoints(self.tileMatrix[ly][i][k])
                             self.moveTiles()
 
-    def ThreeEquMatchable(self, a, b, c):
-        return a == b and b == c
-
     def mergeThreeEquTiles(self):
         for ly in range(0, self.Layers):
             for i in range(0, self.LineBlocks):
@@ -296,57 +292,50 @@ class Game2048Board(Widget):
                             self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k] * 3
                             self.tileMatrix[ly][i][k + 1] = 0
                             self.tileMatrix[ly][i][k + 2] = 0
-                            # this was not intailized so the k value was going out the range value
-                            # so by this we ever we merge the files it assigns the present value to zero and
-                            # merge the number with the ahead value
                             self.addPoints(self.tileMatrix[ly][i][k])
                             self.moveTiles()
-
 
     def addPoints(self, inc_points):
         self.total_points += inc_points
 
-    def gen2048NewValue(self, zeroBlocks):
-        (a, b, c) = zeroBlocks[randint(0, len(zeroBlocks) - 1)]
+    def pickRandomBlock(self,empty_block_list):
+        return empty_block_list[randint(0, len(empty_block_list) - 1)]
+
+    def pickRandomNewValue(self, new_val_array):
+        return new_val_array[randint(0, len(new_val_array) - 1)]
+
+    def genSquare2NewValue(self, empty_block_list):
+        (a, b, c) = self.pickRandomBlock(empty_block_list)
         new_val_array = [2, 2, 4]
-        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
-        return a, b, c, new_val
+        return a, b, c, self.pickRandomNewValue(new_val_array)
 
-    def gen339NewValue(self, zeroBlocks):
-        (a, b, c) = zeroBlocks[randint(0, len(zeroBlocks) - 1)]
+    def genCube3NewValue(self, empty_block_list):
+        (a, b, c) = self.pickRandomBlock(empty_block_list)
         new_val_array = [3, 3, 9]
-        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
-        return a, b, c, new_val
+        return a, b, c, self.pickRandomNewValue(new_val_array)
 
-    def genFibonNewValue(self, zeroBlocks):
-        (a, b, c) = zeroBlocks[randint(0, len(zeroBlocks) - 1)]
+    def genFibonNewValue(self, empty_block_list):
+        (a, b, c) = self.pickRandomBlock(empty_block_list)
         new_val_array = [2, 2, 3, 3]
-        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
-        return a, b, c, new_val
-
+        return a, b, c, self.pickRandomNewValue(new_val_array)
 
     def placeRandomTile(self):
-        zeroBlocks = []
+        empty_block_list = []
         for ly in range(0, self.Layers):
             for i in range(0, self.LineBlocks):
                 for j in range(0, self.LineBlocks):
                     if self.tileMatrix[ly][i][j] == 0:
-                        zeroBlocks.append((ly, i, j))
-        if len(zeroBlocks) == 0:
+                        empty_block_list.append((ly, i, j))
+        if len(empty_block_list) == 0:
             return
 
-        if self.settings.GameStyle == 0:
-            a, b, c, new_val = self.gen2048NewValue(zeroBlocks)
-        elif self.settings.GameStyle == 1:
-            a, b, c, new_val = self.gen339NewValue(zeroBlocks)
-        elif self.settings.GameStyle == 2:
-            a, b, c, new_val = self.genFibonNewValue(zeroBlocks)
-        else:
-            a, b, c, new_val = self.gen2048NewValue(zeroBlocks)
-        ##a, b, c, new_val = self.gen339NewValue(zeroBlocks)
-        #(a, b, c) = zeros[randint(0, len(zeros) - 1)]
-        #new_val_array = [2, 2, 4]
-        #new_val = new_val_array[randint(0, len(new_val_array) - 1)]
+        if self.settings.GameStyle == GameSettings.GAME_CUBE_3:
+            a, b, c, new_val = self.genCube3NewValue(empty_block_list)
+        elif self.settings.GameStyle == GameSettings.GAME_FIBONCCI:
+            a, b, c, new_val = self.genFibonNewValue(empty_block_list)
+        else:  # GameSettings.GAME_SQUARE_2 or Other
+            a, b, c, new_val = self.genSquare2NewValue(empty_block_list)
+
         self.tileMatrix[a][b][c] = new_val
         self.new_block = (a, b, c)
 
@@ -364,7 +353,28 @@ class Game2048Board(Widget):
         #                return True
         #            elif self.tileMatrix[ly][j][i] == self.tileMatrix[ly][j + 1][i]:
         #                return True
-        if self.settings.GameStyle == 0:
+        if self.settings.GameStyle == GameSettings.GAME_CUBE_3:
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(0, self.LineBlocks - 2):
+                        if self.ThreeEquMatchable(self.tileMatrix[ly][i][j],
+                                                  self.tileMatrix[ly][i][j + 1],
+                                                  self.tileMatrix[ly][i][j + 2]):
+                            return True
+                        elif self.ThreeEquMatchable(self.tileMatrix[ly][j][i],
+                                                    self.tileMatrix[ly][j + 1][i],
+                                                    self.tileMatrix[ly][j + 2][i]):
+                            return True
+        elif self.settings.GameStyle == GameSettings.GAME_FIBONCCI:
+            key_list = self.settings.KeyList
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(0, self.LineBlocks - 1):
+                        if self.FibonacciMatchable(key_list, self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1]):
+                            return True
+                        elif self.FibonacciMatchable(key_list, self.tileMatrix[ly][j][i], self.tileMatrix[ly][j + 1][i]):
+                            return True
+        else:  # self.settings.GameStyle == GameSettings.GAME_SQUARE_2 or Other
             for ly in range(0, self.Layers):
                 for i in range(0, self.LineBlocks):
                     for j in range(0, self.LineBlocks - 1):
@@ -372,31 +382,6 @@ class Game2048Board(Widget):
                             return True
                         elif self.TwoEquMatchable(self.tileMatrix[ly][j][i], self.tileMatrix[ly][j + 1][i]):
                             return True
-        elif self.settings.GameStyle == 1:
-            for ly in range(0, self.Layers):
-                for i in range(0, self.LineBlocks):
-                    for j in range(0, self.LineBlocks - 2):
-                        if self.ThreeEquMatchable(self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1], self.tileMatrix[ly][i][j + 2]):
-                            return True
-                        elif self.ThreeEquMatchable(self.tileMatrix[ly][j][i] , self.tileMatrix[ly][j + 1][i], self.tileMatrix[ly][j + 2][i]):
-                            return True
-        elif self.settings.GameStyle == 2:
-            keylist = self.settings.KeyList
-            for ly in range(0, self.Layers):
-                for i in range(0, self.LineBlocks):
-                    for j in range(0, self.LineBlocks - 1):
-                        if self.FibonacciMatchable(keylist, self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1]):
-                            return True
-                        elif self.FibonacciMatchable(keylist, self.tileMatrix[ly][j][i], self.tileMatrix[ly][j + 1][i]):
-                            return True
-        #else:
-        #    for ly in range(0, self.Layers):
-        #        for i in range(0, self.LineBlocks):
-        #            for j in range(0, self.LineBlocks - 1):
-        #                if self.matchTwoEqu(self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1]):
-        #                    return True
-        #                elif self.matchTwoEqu(self.tileMatrix[ly][j][i], self.tileMatrix[ly][j + 1][i]):
-        #                    return True
 
         Logger.info(" checkIfCanGo Check Layers blocks Between Layers ")
         if self.Layers > 1:
@@ -483,12 +468,6 @@ class Game2048Board(Widget):
             Logger.info(f"Processing key")
             if self.checkIfCanGo():
                 Logger.info(f"checked")
-                #if isArrow(keycode[1]):
-                #    rotations = getRotations(keycode[1])
-                #    self.addToUndo()
-                #    self.DoAStep(rotations)
-                #    self.checkGameOver()
-                #    self.printMatrix()
                 if keycode[1] == 'up':
                     self.DoMergeNorth()
                 elif keycode[1] == 'down':
@@ -622,13 +601,14 @@ class Game2048Board(Widget):
 
 
 class KcGames(App):
-    def __init__(self, **kwargs):
-        super(KcGames, self).__init__(**kwargs)
-        self.GameSettings = GameSettings()
+    def __init__(self, game_style=GameSettings.GAME_SQUARE_2, layers=1, line_blocks=4):
+        super(KcGames, self).__init__()
+        self.GameSettings = GameSettings(game_style, layers, line_blocks)
 
     def build(self):
-        return Game2048Board(self.GameSettings)
+        return kcBoardGame(self.GameSettings)
 
 
 if __name__ == '__main__':
-    KcGames().run()
+    app = KcGames()
+    app.run()
