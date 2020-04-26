@@ -123,7 +123,14 @@ class Game2048Board(Widget):
             self.rotateMatrixClockwise()
         if self.canMove():
             self.moveTiles()
-            self.mergeTiles()
+            if self.settings.GameStyle == 0:
+                self.mergeTwoEquTiles()
+            elif self.settings.GameStyle == 1:
+                self.mergeThreeEquTiles()
+            elif self.settings.GameStyle == 2:
+                self.mergeFibonacciTiles()
+            else:
+                self.mergeTwoEquTiles()
             for j in range(0, (4 - rotations) % 4):
                 self.rotateMatrixClockwise()
             self.placeRandomTile()
@@ -170,17 +177,41 @@ class Game2048Board(Widget):
 
     def canMove(self):
         """
-          因為用了旋轉,所以只要檢查一個方向
+          因為用了旋轉,所以只要檢查一個方向, left to right
         :return:
         """
-        for ly in range(0, self.Layers):
-            for i in range(0, self.LineBlocks):
-                for j in range(1, self.LineBlocks):
-                    if self.tileMatrix[ly][i][j - 1] == 0 and self.tileMatrix[ly][i][j] > 0:
-                        return True
-                    elif (self.tileMatrix[ly][i][j - 1] == self.tileMatrix[ly][i][j]) and \
-                            self.tileMatrix[ly][i][j - 1] != 0:
-                        return True
+        if self.settings.GameStyle == 1:
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(2, self.LineBlocks):
+                        if self.tileMatrix[ly][i][j - 2] == 0 or \
+                                self.tileMatrix[ly][i][j - 1] == 0 or \
+                                self.tileMatrix[ly][i][j] == 0:
+                            return True
+                        elif (self.tileMatrix[ly][i][j - 2] != 0) and \
+                                (self.tileMatrix[ly][i][j - 2] == self.tileMatrix[ly][i][j -1 ]) and \
+                                (self.tileMatrix[ly][i][j - 1] == self.tileMatrix[ly][i][j]) :
+                            return True
+        elif self.settings.GameStyle == 2:
+            keylist = self.settings.KeyList
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(1, self.LineBlocks):
+                        if self.tileMatrix[ly][i][j - 1] == 0 or \
+                                self.tileMatrix[ly][i][j] > 0:
+                            return True
+                        elif (self.tileMatrix[ly][i][j - 1] != 0) and \
+                            self.FibonacciMatchable(keylist, self.tileMatrix[ly][i][j - 1], self.tileMatrix[ly][i][j]):
+                            return True
+        else: # if self.settings.GameStyle == 0 or other
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(1, self.LineBlocks):
+                        if self.tileMatrix[ly][i][j - 1] == 0 and self.tileMatrix[ly][i][j] > 0:
+                            return True
+                        elif (self.tileMatrix[ly][i][j - 1] == self.tileMatrix[ly][i][j]) and \
+                                self.tileMatrix[ly][i][j - 1] != 0:
+                            return True
         return False
 
     def canLayerMove(self):
@@ -212,36 +243,110 @@ class Game2048Board(Widget):
                             self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k + 1]
                         self.tileMatrix[ly][i][self.LineBlocks - 1] = 0
 
-    def mergeTiles(self):
+
+    def TwoEquMatchable(self, a, b):
+        return a == b
+
+
+    def FibonacciMatchable(self, key_list, a, b):
+        if (a in key_list) and (b in key_list):
+            idx1 = key_list.index(a)
+            idx2 = key_list.index(b)
+            return (idx1 == idx2 + 1) or (idx1 == idx2 - 1)
+        return False
+
+    def mergeTwoEquTiles(self):
         for ly in range(0, self.Layers):
             for i in range(0, self.LineBlocks):
                 for k in range(0, self.LineBlocks - 1):
-                    if self.tileMatrix[ly][i][k] == self.tileMatrix[ly][i][k + 1] and self.tileMatrix[ly][i][k] != 0:
-                        self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k] * 2
-                        self.tileMatrix[ly][i][k + 1] = 0
-                        # this was not intailized so the k value was going out the range value
-                        # so by this we ever we merge the files it assigns the present value to zero and
-                        # merge the number with the ahead value
-                        self.addPoints(self.tileMatrix[ly][i][k])
-                        self.moveTiles()
+                    if self.tileMatrix[ly][i][k] != 0:
+                        if self.TwoEquMatchable(self.tileMatrix[ly][i][k], self.tileMatrix[ly][i][k + 1]):
+                            self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k] * 2
+                            self.tileMatrix[ly][i][k + 1] = 0
+                            # this was not intailized so the k value was going out the range value
+                            # so by this we ever we merge the files it assigns the present value to zero and
+                            # merge the number with the ahead value
+                            self.addPoints(self.tileMatrix[ly][i][k])
+                            self.moveTiles()
+
+    def mergeFibonacciTiles(self):
+        key_list = self.settings.KeyList
+        for ly in range(0, self.Layers):
+            for i in range(0, self.LineBlocks):
+                for k in range(0, self.LineBlocks - 1):
+                    if self.tileMatrix[ly][i][k] != 0:
+                        if self.FibonacciMatchable(key_list, self.tileMatrix[ly][i][k], self.tileMatrix[ly][i][k + 1]):
+                            self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k] + self.tileMatrix[ly][i][k + 1]
+                            self.tileMatrix[ly][i][k + 1] = 0
+                            # this was not intailized so the k value was going out the range value
+                            # so by this we ever we merge the files it assigns the present value to zero and
+                            # merge the number with the ahead value
+                            self.addPoints(self.tileMatrix[ly][i][k])
+                            self.moveTiles()
+
+    def ThreeEquMatchable(self, a, b, c):
+        return a == b and b == c
+
+    def mergeThreeEquTiles(self):
+        for ly in range(0, self.Layers):
+            for i in range(0, self.LineBlocks):
+                for k in range(0, self.LineBlocks - 2):
+                    if self.tileMatrix[ly][i][k] != 0:
+                        if self.ThreeEquMatchable(self.tileMatrix[ly][i][k], self.tileMatrix[ly][i][k + 1], self.tileMatrix[ly][i][k + 2]):
+                            self.tileMatrix[ly][i][k] = self.tileMatrix[ly][i][k] * 3
+                            self.tileMatrix[ly][i][k + 1] = 0
+                            self.tileMatrix[ly][i][k + 2] = 0
+                            # this was not intailized so the k value was going out the range value
+                            # so by this we ever we merge the files it assigns the present value to zero and
+                            # merge the number with the ahead value
+                            self.addPoints(self.tileMatrix[ly][i][k])
+                            self.moveTiles()
+
 
     def addPoints(self, inc_points):
         self.total_points += inc_points
 
+    def gen2048NewValue(self, zeroBlocks):
+        (a, b, c) = zeroBlocks[randint(0, len(zeroBlocks) - 1)]
+        new_val_array = [2, 2, 4]
+        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
+        return a, b, c, new_val
+
+    def gen339NewValue(self, zeroBlocks):
+        (a, b, c) = zeroBlocks[randint(0, len(zeroBlocks) - 1)]
+        new_val_array = [3, 3, 9]
+        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
+        return a, b, c, new_val
+
+    def genFibonNewValue(self, zeroBlocks):
+        (a, b, c) = zeroBlocks[randint(0, len(zeroBlocks) - 1)]
+        new_val_array = [2, 2, 3, 3]
+        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
+        return a, b, c, new_val
+
+
     def placeRandomTile(self):
-        zeros = []
+        zeroBlocks = []
         for ly in range(0, self.Layers):
             for i in range(0, self.LineBlocks):
                 for j in range(0, self.LineBlocks):
                     if self.tileMatrix[ly][i][j] == 0:
-                        zeros.append((ly, i, j))
-        if len(zeros) == 0:
+                        zeroBlocks.append((ly, i, j))
+        if len(zeroBlocks) == 0:
             return
 
-        (a, b, c) = zeros[randint(0, len(zeros) - 1)]
-
-        new_val_array = [2, 2, 4]
-        new_val = new_val_array[randint(0, len(new_val_array) - 1)]
+        if self.settings.GameStyle == 0:
+            a, b, c, new_val = self.gen2048NewValue(zeroBlocks)
+        elif self.settings.GameStyle == 1:
+            a, b, c, new_val = self.gen339NewValue(zeroBlocks)
+        elif self.settings.GameStyle == 2:
+            a, b, c, new_val = self.genFibonNewValue(zeroBlocks)
+        else:
+            a, b, c, new_val = self.gen2048NewValue(zeroBlocks)
+        ##a, b, c, new_val = self.gen339NewValue(zeroBlocks)
+        #(a, b, c) = zeros[randint(0, len(zeros) - 1)]
+        #new_val_array = [2, 2, 4]
+        #new_val = new_val_array[randint(0, len(new_val_array) - 1)]
         self.tileMatrix[a][b][c] = new_val
         self.new_block = (a, b, c)
 
@@ -252,13 +357,47 @@ class Game2048Board(Widget):
             if self.tileMatrix[a][b][c] == 0:
                 return True
         Logger.info(" checkIfCanGo Check blocks Moveable in Layer")
-        for ly in range(0, self.Layers):
-            for i in range(0, self.LineBlocks):
-                for j in range(0, self.LineBlocks - 1):
-                    if self.tileMatrix[ly][i][j] == self.tileMatrix[ly][i][j + 1]:
-                        return True
-                    elif self.tileMatrix[ly][j][i] == self.tileMatrix[ly][j + 1][i]:
-                        return True
+        #for ly in range(0, self.Layers):
+        #    for i in range(0, self.LineBlocks):
+        #        for j in range(0, self.LineBlocks - 1):
+        #            if self.tileMatrix[ly][i][j] == self.tileMatrix[ly][i][j + 1]:
+        #                return True
+        #            elif self.tileMatrix[ly][j][i] == self.tileMatrix[ly][j + 1][i]:
+        #                return True
+        if self.settings.GameStyle == 0:
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(0, self.LineBlocks - 1):
+                        if self.TwoEquMatchable(self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1]):
+                            return True
+                        elif self.TwoEquMatchable(self.tileMatrix[ly][j][i], self.tileMatrix[ly][j + 1][i]):
+                            return True
+        elif self.settings.GameStyle == 1:
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(0, self.LineBlocks - 2):
+                        if self.ThreeEquMatchable(self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1], self.tileMatrix[ly][i][j + 2]):
+                            return True
+                        elif self.ThreeEquMatchable(self.tileMatrix[ly][j][i] , self.tileMatrix[ly][j + 1][i], self.tileMatrix[ly][j + 2][i]):
+                            return True
+        elif self.settings.GameStyle == 2:
+            keylist = self.settings.KeyList
+            for ly in range(0, self.Layers):
+                for i in range(0, self.LineBlocks):
+                    for j in range(0, self.LineBlocks - 1):
+                        if self.FibonacciMatchable(keylist, self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1]):
+                            return True
+                        elif self.FibonacciMatchable(keylist, self.tileMatrix[ly][j][i], self.tileMatrix[ly][j + 1][i]):
+                            return True
+        #else:
+        #    for ly in range(0, self.Layers):
+        #        for i in range(0, self.LineBlocks):
+        #            for j in range(0, self.LineBlocks - 1):
+        #                if self.matchTwoEqu(self.tileMatrix[ly][i][j], self.tileMatrix[ly][i][j + 1]):
+        #                    return True
+        #                elif self.matchTwoEqu(self.tileMatrix[ly][j][i], self.tileMatrix[ly][j + 1][i]):
+        #                    return True
+
         Logger.info(" checkIfCanGo Check Layers blocks Between Layers ")
         if self.Layers > 1:
             for ly in range(0, self.Layers - 1):
