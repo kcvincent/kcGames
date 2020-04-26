@@ -13,7 +13,9 @@ from win32api import GetSystemMetrics
 from GameSettings import GameSettings
 from kcGameLib import *
 
+
 kivy.require("1.11.1")
+
 
 class GameOverError(Exception):
     pass
@@ -235,8 +237,6 @@ class Game2048Board(Widget):
                         zeros.append((ly, i, j))
         if len(zeros) == 0:
             return
-            #self.saveGameState()
-            #raise GameOverError("Game Over ??")
 
         (a, b, c) = zeros[randint(0, len(zeros) - 1)]
 
@@ -324,6 +324,12 @@ class Game2048Board(Widget):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
         self._keyboard = None
 
+    def DoMergeUpper(self):
+        self.addToUndo()
+        self.DoMergeUpperLayer()
+        self.checkGameOver()
+        self.printMatrix()
+
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         # Keycode is composed of an integer + a string
         # If we hit escape, release the keyboard
@@ -338,22 +344,24 @@ class Game2048Board(Widget):
             Logger.info(f"Processing key")
             if self.checkIfCanGo():
                 Logger.info(f"checked")
-                if isArrow(keycode[1]):
-                    rotations = getRotations(keycode[1])
-                    self.addToUndo()
-                    self.DoAStep(rotations)
-                    self.checkGameOver()
-                    self.printMatrix()
+                #if isArrow(keycode[1]):
+                #    rotations = getRotations(keycode[1])
+                #    self.addToUndo()
+                #    self.DoAStep(rotations)
+                #    self.checkGameOver()
+                #    self.printMatrix()
+                if keycode[1] == 'up':
+                    self.DoMergeNorth()
+                elif keycode[1] == 'down':
+                    self.DoMergeSouth()
+                elif keycode[1] == 'left':
+                    self.DoMergeWest()
+                elif keycode[1] == 'right':
+                    self.DoMergeEast()
                 elif keycode[1] == 'q':
-                    self.addToUndo()
-                    self.DoMergeUpperLayer()
-                    self.checkGameOver()
-                    self.printMatrix()
+                    self.DoMergeUpper()
                 elif keycode[1] == 'e':
-                    self.addToUndo()
-                    self.DoMergeLowerLayer()
-                    self.checkGameOver()
-                    self.printMatrix()
+                    self.DoMergeLower()
                 elif keycode[1] == 's':
                     self.saveGameState()
                 elif keycode[1] == 'l':
@@ -365,6 +373,36 @@ class Game2048Board(Widget):
         # Return True to accept the key. Otherwise, it will be used by
         # the system.
         return True
+
+    def DoMergeEast(self):
+        self.addToUndo()
+        self.DoAStep(3)
+        self.checkGameOver()
+        self.printMatrix()
+
+    def DoMergeWest(self):
+        self.addToUndo()
+        self.DoAStep(1)
+        self.checkGameOver()
+        self.printMatrix()
+
+    def DoMergeSouth(self):
+        self.addToUndo()
+        self.DoAStep(2)
+        self.checkGameOver()
+        self.printMatrix()
+
+    def DoMergeNorth(self):
+        self.addToUndo()
+        self.DoAStep(0)
+        self.checkGameOver()
+        self.printMatrix()
+
+    def DoMergeLower(self):
+        self.addToUndo()
+        self.DoMergeLowerLayer()
+        self.checkGameOver()
+        self.printMatrix()
 
     def checkGameOver(self):
         self.gameOvered = not self.checkIfCanGo()
@@ -380,11 +418,11 @@ class Game2048Board(Widget):
     def getBlockTextColor(self, ly, i, j):
         return self.BlockTextColorDict[self.tileMatrix[ly][i][j]]
 
-    def getBlockX(self, ly, i):
-        return ly * (self.LayerWidth + self.LayerSpace) + i * (self.BlockWidth + self.BlockPad) + self.BlockPad
+    def getBlockX(self, ly, col):
+        return ly * (self.LayerWidth + self.LayerSpace) + col * (self.BlockWidth + self.BlockPad) + self.BlockPad
 
-    def getBlockY(self, j):
-        return self.HeaderHeight + j * (self.BlockWidth + self.BlockPad)
+    def getBlockY(self, row):
+        return self.HeaderHeight + row * (self.BlockWidth + self.BlockPad)
 
     def drawBackGround(self):
         # Draw BackGround
@@ -407,6 +445,10 @@ class Game2048Board(Widget):
             self.canvas.add(Rectangle(size=text.size,
                                       pos=self.toKivyXY(self.BlockPad, text.size[1] * 2, text.size[1]),
                                       texture=text))
+        #msg = datetime.now().strftime("%H%M%S")
+        #rawimg = genQrCodeBytesIO(msg)
+        #img = CoreImage(BytesIO(rawimg.read()), ext="png", filename="image.png")
+        #self.canvas.add(Rectangle(size=(100, 100), pos=self.toKivyXY(100, 100), texture=img.texture))
 
     def printMatrix(self):
         self.canvas.clear()

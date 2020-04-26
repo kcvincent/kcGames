@@ -6,10 +6,11 @@ from datetime import datetime
 
 class GameSettings:
     DEFAULT_LAYERS = 2
+    DEFAULT_LINE_BLOCKS = 4
+
     LAYER_SPACE = 30
-    DEFAULT_LINE_BLOCKS = 3
     DEFAULT_BLOCK_WIDTH = 100
-    HEADER_HEIGHT = 300
+    HEADER_HEIGHT = 100
     BLOCK_PAD = 10
     SAVE_FILENAME = "SaveData.txt"
     BOARD_BG_COLOR = (187, 173, 160)
@@ -119,6 +120,7 @@ class GameSettings:
     @property
     def Layers(self):
         return self._layers
+
     @Layers.setter
     def Layers(self, value):
         self._layers = max(value, 1)
@@ -126,6 +128,7 @@ class GameSettings:
     @property
     def LayerSpace(self):
         return self._layer_space
+
     @LayerSpace.setter
     def LayerSpace(self, value):
         self._layer_space = max(value, 10)
@@ -133,6 +136,7 @@ class GameSettings:
     @property
     def LineBlocks(self):
         return self._line_blocks
+
     @LineBlocks.setter
     def LineBlocks(self, value):
         self._line_blocks = max(value, 2)
@@ -140,6 +144,7 @@ class GameSettings:
     @property
     def BlockWidth(self):
         return self._block_width
+
     @BlockWidth.setter
     def BlockWidth(self, value):
         self._block_width = max(value, 80)
@@ -147,6 +152,7 @@ class GameSettings:
     @property
     def BlockHeight(self):
         return self._block_height
+
     @BlockHeight.setter
     def BlockHeight(self, value):
         self._block_height = max(value, 80)
@@ -154,20 +160,23 @@ class GameSettings:
     @property
     def HeaderHeight(self):
         return self._header_height
+
     @HeaderHeight.setter
-    def HeaderHeight(self, value ):
-        self._header_height = max(value,100)
+    def HeaderHeight(self, value):
+        self._header_height = max(value, 100)
 
     @property
     def BlockPad(self):
         return self._block_pad
+
     @BlockPad.setter
     def BlockPad(self, value):
-        self._block_pad = max(value ,10)
+        self._block_pad = max(value, 10)
 
     @property
     def SaveFileName(self):
         return self._save_filename
+
     @SaveFileName.setter
     def SaveFileName(self, value):
         self._save_filename = value
